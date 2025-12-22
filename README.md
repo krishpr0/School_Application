@@ -1,4 +1,4 @@
-# schoolapp
+# school_application
 
 A new Flutter project.
 

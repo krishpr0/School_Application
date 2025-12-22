@@ -1,6 +1,6 @@
 {
-    "name": "schoolapp",
-    "short_name": "schoolapp",
+    "name": "school_application",
+    "short_name": "school_application",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
