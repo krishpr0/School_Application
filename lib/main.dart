@@ -32,6 +32,7 @@ class Assignment {
       subject: json['subject'],
       title: json['title'],
       description: json['description'],
+      deadline: DateTime.parse(json['deadline']),
       submitTo: json['submitTo'],
       status: AssignmentStatus.values[json['status'] ?? 0],
     );
@@ -80,7 +81,7 @@ class Assignment {
 
   Future<void> _loadAssignments() async {
     final perfs = await SharedPreferences.getInstance();
-    final data = prefs.getStringList('assignments') ?? [];
+    final data = perfs.getStringList('assignments') ?? [];
     setState(() {
       _assignments.clear();
       _assignments.addAll(data.map((e) => Assignment.fromJson(jsonDecode(e))));
@@ -89,7 +90,7 @@ class Assignment {
 
 
   Future<void> _saveAssignments() async {
-    final prefs = await SharedPreferences.getInstace();
+    final prefs = await SharedPreferences.getInstance();
     final data = _assignments.map((a) => jsonEncode(a.toJson())).toList();
     await prefs.setStringList('assignments', data);
   }
@@ -105,7 +106,7 @@ class Assignment {
     if (result != null && result is Assignment) {
       setState(() {
         if (index != null) {
-          _assignments[index] = results;
+          _assignments[index] = result;
         } else {
           _assignments.add(result);
         }
@@ -172,7 +173,87 @@ class Assignment {
           ),
         );
       }
+
+        Widget buildKanbanBoard() {
+    Map<AssignmentStatus, List<Assignment>> statusMap = {
+      AssignmentStatus.Todo: [],
+      AssignmentStatus.InProgress: [],
+      AssignmentStatus.Completed: [],
+    };
+    for (var a in  _assignments) {
+      statusMap[a.status]?.add(a);
     }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        height: 400,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: AssignmentStatus.values.map((status){
+            return SizedBox(
+              width: 260,
+              child: Card(
+                margin: const EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    Padding(
+                        padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        status.toString().split('.').last.replaceAllMapped(
+                          RegExp(r'([A-Z])'),
+                            (m) => ' ${m[1]}',
+                        ).toUpperCase(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: status == AssignmentStatus.Todo ? Colors.blue : Colors.green,
+                        ),
+                      ),
+                    ),
+
+                    Expanded(
+                        child: ListView.builder(
+                            itemCount: statusMap[status]!.length,
+                          itemBuilder: (context,index) {
+                              final assignment = statusMap[status]![index];
+                              return ListTile(
+                                title: Text(assignment.title),
+                                subtitle: Text(assignment.subject),
+                                onTap: () => _showAssignmentDetail(assignment, _assignments.indexOf(assignment),
+                                ),
+                              );
+                          },
+                        ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+    @override
+    Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Assignment Manager')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            ElevatedButton(onPressed: () => _addOrEditAssignment(), child: const Text('Add Assignment'),
+            ),
+            const SizedBox(height: 20),
+            Expanded(child: buildKanbanBoard()),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 
 
