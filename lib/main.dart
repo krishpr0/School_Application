@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 
 
 void main() {
@@ -138,43 +139,8 @@ class Assignment {
     );
   }
 
-  @override
-    Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Assignment Manager'),
-      ),
-      body: Padding(
-          padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                ElevatedButton(
-                    onPressed: () => _addOrEditAssignment(),
-                    child: const Text('Add Assignment'),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                    child: ListView.builder(
-                      itemCount: _assignments.length,
-                      itemBuilder: (context, index) {
-                        final assignment = _assignments[index];
-                        return Card(
-                          child: ListTile(
-                            title: Text(assignment.title),
-                            subtitle: Text(assignment.subject),
-                            onTap: () => _showAssignmentDetail(assignment, index),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-               ],
-             ),
-          ),
-        );
-      }
 
-        Widget buildKanbanBoard() {
+  Widget buildKanbanBoard() {
     Map<AssignmentStatus, List<Assignment>> statusMap = {
       AssignmentStatus.Todo: [],
       AssignmentStatus.InProgress: [],
@@ -238,21 +204,22 @@ class Assignment {
 
     @override
     Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Assignment Manager')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            ElevatedButton(onPressed: () => _addOrEditAssignment(), child: const Text('Add Assignment'),
-            ),
-            const SizedBox(height: 20),
-            Expanded(child: buildKanbanBoard()),
-          ],
+      return Scaffold(
+        appBar: AppBar(title: const Text('Assignment Manager')),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              ElevatedButton(onPressed: () => _addOrEditAssignment(),
+                child: const Text('Add Assignment'),
+              ),
+              const SizedBox(height: 20),
+              Expanded(child: buildKanbanBoard()),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    }
 }
 
 
