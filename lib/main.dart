@@ -18,6 +18,8 @@ class Assignment {
   DateTime deadline;
   String submitTo;
   AssignmentStatus status;
+  DateTime? startDate;
+  DateTime? completionDate;
 
   Assignment({
     required this.subject,
@@ -26,6 +28,8 @@ class Assignment {
     required this.deadline,
     required this.submitTo,
     this.status = AssignmentStatus.Todo,
+    this.startDate,
+    this.completionDate,
 });
 
   factory Assignment.fromJson(Map<String, dynamic> json) {
@@ -36,6 +40,8 @@ class Assignment {
       deadline: DateTime.parse(json['deadline']),
       submitTo: json['submitTo'],
       status: AssignmentStatus.values[json['status'] ?? 0],
+      startDate: json['startDate'] != null ? DateTime.tryParse(json['startDate']) : null,
+      completionDate: json['completionDate'] != null ? DateTime.tryParse(json['completionDate']) : null,
     );
   }
 
@@ -45,6 +51,8 @@ class Assignment {
     'description': description,
     'submitTo': submitTo,
     'status': status.index,
+    'startDate': startDate?.toIso8601String(),
+    'completitionDate': completionDate?.toIso8601String(),
   };
 }
 
@@ -150,6 +158,8 @@ class Assignment {
       statusMap[a.status]?.add(a);
     }
 
+    final double kanbanHeight = (MediaQuery.of(context).size.height - kToolbarHeight - 100).clamp(20.0, double.infinity);
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
@@ -159,7 +169,33 @@ class Assignment {
           children: AssignmentStatus.values.map((status){
             return SizedBox(
               width: 260,
-              child: Card(
+                child: DragTarget<Assignment>(
+                  onWillAccept: (assignment) {
+                    if (assignment == null) return false;
+                    if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) return true;
+                    if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) return true;
+                    return false;
+                  },
+                  onAccept: (assignment) async {
+                    WidgetsBinding.instance.addPostFrameCallback((_) async {
+                      setState(() {
+                        final index = _assignments.indexOf(assignment);
+                        if (index != -1) {
+                          if (status == AssignmentStatus.InProgress && assignment.status == AssignmentStatus.Todo) {
+                            assignment.status == AssignmentStatus.InProgress;
+                            assignment.startDate = DateTime.now();
+                          } else if (status == AssignmentStatus.Completed && assignment.status == AssignmentStatus.InProgress) {
+                            assignment.status = AssignmentStatus.Completed;
+                            assignment.completionDate = DateTime.now();
+                          }
+                          _assignments[index] = assignment;
+                        }
+                      });
+                      await _saveAssignments();
+                    });
+                  },
+
+                builder: (context, candidateData, rejectedData) => Card(
                 margin: const EdgeInsets.all(8),
                 child: Column(
                   children: [
@@ -189,16 +225,17 @@ class Assignment {
                                 onTap: () => _showAssignmentDetail(assignment, _assignments.indexOf(assignment),
                                 ),
                               );
-                          },
+                            },
+                          ),
                         ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
+              );
+            }).toList(),
+          ),
+       ),
     );
   }
 
